@@ -1,0 +1,1280 @@
+<title>Basket Coach</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap">
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<style>
+:root {
+  --bg: #F3F0EC;
+  --surface: #FFFFFF;
+  --navy: #1A1A2E;
+  --orange: #E85D04;
+  --orange-light: #FFF4EC;
+  --text: #1A1A2E;
+  --text-muted: #6B7280;
+  --border: #E2DCD4;
+  --tag-bg: #E8F0FE;
+  --tag-text: #1A56DB;
+  --cat-bg: #FFF0E6;
+  --cat-text: #C44F00;
+  --danger: #DC2626;
+  --shadow: 0 2px 10px rgba(26,26,46,0.07);
+  --radius: 12px;
+  --court-floor: #C8943A;
+  --court-paint: rgba(180,100,15,0.28);
+  --court-line: rgba(255,255,255,0.92);
+  --court-zone-hover: rgba(255,255,255,0.13);
+  --court-zone-active: rgba(232,93,4,0.22);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D0D1A; --surface: #181828; --navy: #E8E4DF;
+    --orange: #FF7A2E; --orange-light: #281508;
+    --text: #E8E4DF; --text-muted: #9CA3AF; --border: #2D2D45;
+    --tag-bg: #1C2850; --tag-text: #7CA5F5;
+    --cat-bg: #38160A; --cat-text: #FF9A5C;
+    --shadow: 0 2px 10px rgba(0,0,0,0.35);
+    --court-floor: #7A5518; --court-paint: rgba(80,40,5,0.45);
+    --court-line: rgba(255,255,255,0.8);
+    --court-zone-hover: rgba(255,255,255,0.1);
+    --court-zone-active: rgba(255,122,46,0.25);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D0D1A; --surface: #181828; --navy: #E8E4DF;
+  --orange: #FF7A2E; --orange-light: #281508;
+  --text: #E8E4DF; --text-muted: #9CA3AF; --border: #2D2D45;
+  --tag-bg: #1C2850; --tag-text: #7CA5F5;
+  --cat-bg: #38160A; --cat-text: #FF9A5C;
+  --shadow: 0 2px 10px rgba(0,0,0,0.35);
+  --court-floor: #7A5518; --court-paint: rgba(80,40,5,0.45);
+  --court-line: rgba(255,255,255,0.8);
+  --court-zone-hover: rgba(255,255,255,0.1);
+  --court-zone-active: rgba(255,122,46,0.25);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg); color: var(--text);
+  min-height: 100%; font-size: 14px; line-height: 1.5;
+}
+button, input, select, textarea {
+  font-family: inherit; font-size: inherit; color: inherit;
+}
+
+/* ── LOGIN SCREEN ── */
+#login-screen {
+  position: fixed; inset: 0; background: var(--bg);
+  z-index: 9999; display: flex; align-items: center;
+  justify-content: center; padding: 20px;
+}
+#login-screen[hidden] { display: none !important; }
+.login-box {
+  background: var(--surface); border-radius: 20px; padding: 40px 36px;
+  width: 100%; max-width: 380px;
+  box-shadow: 0 8px 48px rgba(26,26,46,0.14);
+}
+.login-logo { text-align: center; margin-bottom: 32px; }
+.login-logo .ball { font-size: 54px; line-height: 1; }
+.login-logo h1 {
+  font-family: 'Oswald', sans-serif; font-size: 30px;
+  font-weight: 700; color: var(--orange); margin: 8px 0 4px;
+}
+.login-logo p { font-size: 13px; color: var(--text-muted); }
+.login-label {
+  display: block; font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .6px;
+  color: var(--text-muted); margin-bottom: 6px;
+}
+.login-input {
+  display: block; width: 100%; padding: 13px 14px;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  background: var(--bg); color: var(--text);
+  font-size: 15px; margin-bottom: 18px;
+  transition: border-color .2s;
+}
+.login-input:focus { outline: none; border-color: var(--orange); }
+.login-btn {
+  display: block; width: 100%; padding: 15px;
+  background: var(--orange); color: #fff; border: none;
+  border-radius: 11px; font-family: 'Oswald', sans-serif;
+  font-size: 17px; font-weight: 600; letter-spacing: .5px;
+  cursor: pointer; transition: opacity .15s;
+}
+.login-btn:hover { opacity: .92; }
+.login-btn:active { opacity: .80; }
+.login-btn:disabled { opacity: .55; cursor: default; }
+.login-err {
+  color: var(--danger); font-size: 13px; text-align: center;
+  margin-top: 12px; display: none;
+}
+.login-ver {
+  text-align: center; font-size: 11px; color: var(--text-muted);
+  margin-top: 24px; opacity: .6;
+}
+
+/* ── NAV ── */
+.topnav {
+  background: var(--navy); color: #fff;
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 16px; height: 52px; position: sticky; top: 0; z-index: 100;
+}
+.logo { display: flex; align-items: center; gap: 8px; margin-right: auto; }
+.logo-icon { font-size: 22px; }
+.logo-text {
+  font-family: 'Oswald', sans-serif; font-size: 18px;
+  font-weight: 700; letter-spacing: .5px; color: #fff;
+}
+.nav-tabs { display: flex; gap: 2px; }
+.nav-tab {
+  background: none; border: none; color: rgba(255,255,255,.65);
+  padding: 6px 10px; border-radius: 8px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  transition: background .15s, color .15s;
+}
+.nav-tab:hover { background: rgba(255,255,255,.08); color: #fff; }
+.nav-tab.active { background: var(--orange); color: #fff; }
+.nav-tab .icon { font-size: 16px; line-height: 1; }
+.nav-tab .label { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+.nav-right { display: flex; align-items: center; gap: 8px; margin-left: 8px; }
+.theme-btn, .logout-btn {
+  background: rgba(255,255,255,.1); border: none; color: #fff;
+  width: 34px; height: 34px; border-radius: 8px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; transition: background .15s;
+}
+.theme-btn:hover, .logout-btn:hover { background: rgba(255,255,255,.2); }
+.logout-btn { font-size: 13px; font-weight: 600; width: auto; padding: 0 10px; gap: 4px; }
+.user-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #4ADE80; flex-shrink: 0;
+}
+
+/* ── MAIN ── */
+.main { max-width: 900px; margin: 0 auto; padding: 20px 16px 80px; }
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── PAGE HEADER ── */
+.page-hdr { margin-bottom: 20px; }
+.page-title { font-family: 'Oswald', sans-serif; font-size: 24px; font-weight: 700; }
+.page-sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+/* ── SEARCH ── */
+.search-bar-wrap { position: relative; margin-bottom: 14px; }
+.search-icon {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  font-size: 17px; pointer-events: none;
+}
+.search-bar {
+  width: 100%; padding: 13px 14px 13px 42px;
+  border: 1.5px solid var(--border); border-radius: 12px;
+  background: var(--surface); font-size: 15px; color: var(--text);
+  box-shadow: var(--shadow);
+}
+.search-bar:focus { outline: none; border-color: var(--orange); }
+.tag-cloud {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px;
+  align-items: center;
+}
+.tag-cloud-label { font-size: 11px; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .5px; }
+.tag-btn {
+  background: var(--tag-bg); color: var(--tag-text); border: none;
+  border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: all .15s;
+}
+.tag-btn.active { background: var(--orange); color: #fff; }
+.results-count { font-size: 13px; color: var(--text-muted); margin-bottom: 14px; }
+.results-count strong { color: var(--text); }
+
+/* ── CARDS ── */
+.cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.ex-card {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 16px; cursor: pointer;
+  box-shadow: var(--shadow); transition: box-shadow .15s, transform .1s;
+}
+.ex-card:hover { box-shadow: 0 6px 20px rgba(26,26,46,0.12); transform: translateY(-2px); }
+.ex-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+.ex-name { font-family: 'Oswald', sans-serif; font-size: 16px; font-weight: 600; line-height: 1.2; }
+.ex-cat-pill {
+  background: var(--cat-bg); color: var(--cat-text); font-size: 10px;
+  font-weight: 700; padding: 3px 8px; border-radius: 20px;
+  white-space: nowrap; text-transform: uppercase; letter-spacing: .4px; flex-shrink: 0;
+}
+.ex-desc { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ex-meta { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.ex-meta-item { font-size: 11px; color: var(--text-muted); }
+.ex-meta-item span { font-size: 10px; text-transform: uppercase; letter-spacing: .3px; display: block; }
+.ex-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.ex-tag {
+  background: var(--tag-bg); color: var(--tag-text); font-size: 10px;
+  padding: 2px 8px; border-radius: 20px; cursor: pointer;
+}
+.ex-tag:hover { opacity: .75; }
+.empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+.empty-icon { font-size: 36px; margin-bottom: 10px; }
+
+/* ── LIBRARY ── */
+.cat-filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.cat-filter {
+  background: var(--surface); border: 1.5px solid var(--border);
+  color: var(--text-muted); border-radius: 20px; padding: 5px 14px;
+  font-size: 12px; font-weight: 500; cursor: pointer; transition: all .15s;
+}
+.cat-filter.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+/* ── FORM ── */
+.form-card {
+  background: var(--surface); border-radius: var(--radius);
+  padding: 24px; box-shadow: var(--shadow); border: 1.5px solid var(--border);
+}
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-group label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); }
+.form-group input, .form-group select, .form-group textarea {
+  padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 8px;
+  background: var(--bg); color: var(--text); font-size: 14px;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  outline: none; border-color: var(--orange);
+}
+.form-group textarea { min-height: 90px; resize: vertical; }
+.form-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 18px; border-radius: 9px; font-weight: 600;
+  font-size: 13px; cursor: pointer; border: none; transition: opacity .15s;
+}
+.btn:active { opacity: .80; }
+.btn-primary { background: var(--orange); color: #fff; }
+.btn-secondary { background: var(--bg); color: var(--text); border: 1.5px solid var(--border); }
+.btn-danger { background: #FEE2E2; color: var(--danger); }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+
+/* ── SESSIONS ── */
+.sessions-layout { display: grid; grid-template-columns: 1fr 340px; gap: 20px; align-items: start; }
+.new-session-panel {
+  background: var(--surface); border-radius: var(--radius);
+  padding: 20px; box-shadow: var(--shadow); border: 1.5px solid var(--border);
+  position: sticky; top: 70px;
+}
+.session-panel-title { font-family: 'Oswald', sans-serif; font-size: 18px; font-weight: 600; margin-bottom: 16px; }
+.sess-field { margin-bottom: 12px; }
+.sess-field label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin-bottom: 5px; }
+.sess-field input, .sess-field textarea, .sess-field select {
+  width: 100%; padding: 9px 11px; border: 1.5px solid var(--border);
+  border-radius: 8px; background: var(--bg); color: var(--text); font-size: 13px;
+}
+.sess-field input:focus, .sess-field textarea:focus, .sess-field select:focus { outline: none; border-color: var(--orange); }
+.sess-field textarea { resize: none; min-height: 60px; }
+.picker-wrap { position: relative; margin-bottom: 12px; }
+.picker-input {
+  width: 100%; padding: 9px 11px; border: 1.5px solid var(--border);
+  border-radius: 8px; background: var(--bg); color: var(--text); font-size: 13px;
+}
+.picker-input:focus { outline: none; border-color: var(--orange); }
+.picker-results {
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 8px; box-shadow: var(--shadow); z-index: 50;
+  max-height: 200px; overflow-y: auto; margin-top: 4px;
+}
+.picker-item {
+  padding: 9px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px;
+  font-size: 13px; border-bottom: 1px solid var(--border);
+}
+.picker-item:last-child { border-bottom: none; }
+.picker-item:hover { background: var(--bg); }
+.picker-cat { background: var(--cat-bg); color: var(--cat-text); font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; flex-shrink: 0; text-transform: uppercase; }
+.added-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; max-height: 160px; overflow-y: auto; }
+.added-item { display: flex; justify-content: space-between; align-items: center; background: var(--bg); border-radius: 7px; padding: 7px 10px; font-size: 12px; gap: 8px; }
+.added-rm { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px 5px; border-radius: 4px; }
+.added-rm:hover { background: #FEE2E2; color: var(--danger); }
+.session-card {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 16px; margin-bottom: 12px;
+  box-shadow: var(--shadow);
+}
+.sess-hdr { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+.sess-name { font-family: 'Oswald', sans-serif; font-size: 17px; font-weight: 600; }
+.sess-date { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.sess-info { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+.sess-drills { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+.sess-pill { background: var(--tag-bg); color: var(--tag-text); font-size: 11px; padding: 3px 10px; border-radius: 20px; }
+.sess-notes { font-size: 12px; color: var(--text-muted); font-style: italic; border-left: 2px solid var(--orange); padding-left: 8px; margin-top: 6px; }
+
+/* ── COURT ── */
+.court-wrap {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); margin-bottom: 16px;
+}
+.court-svg-container { width: 100%; max-width: 600px; margin: 0 auto; }
+.court-svg { width: 100%; height: auto; display: block; border-radius: 8px; }
+.c-floor { fill: var(--court-floor); }
+.c-line { fill: none; stroke: var(--court-line); stroke-width: 2; }
+.c-line-thin { fill: none; stroke: var(--court-line); stroke-width: 1.5; }
+.c-paint { fill: var(--court-paint); stroke: var(--court-line); stroke-width: 1.5; }
+.c-ring { fill: none; stroke: var(--court-line); stroke-width: 2.5; }
+.c-board { fill: var(--court-line); opacity: .85; }
+.c-restricted { fill: none; stroke: var(--court-line); stroke-width: 1.5; stroke-dasharray: 3 3; }
+.zone-hit {
+  fill: transparent; cursor: pointer;
+  transition: fill .15s;
+}
+.zone-hit:hover { fill: var(--court-zone-hover); }
+.zone-hit.z-active { fill: var(--court-zone-active); }
+.zone-pills {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;
+}
+.zone-pill {
+  background: var(--surface); border: 1.5px solid var(--border);
+  color: var(--text); border-radius: 20px; padding: 7px 14px;
+  font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s;
+}
+.zone-pill:hover { border-color: var(--orange); color: var(--orange); }
+.zone-pill.active { background: var(--orange); color: #fff; border-color: var(--orange); }
+.zone-results-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px; flex-wrap: wrap; gap: 8px;
+}
+.zone-results-title { font-family: 'Oswald',sans-serif; font-size: 18px; font-weight: 600; }
+.court-tip {
+  background: var(--orange-light); border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 12px 16px; margin-bottom: 20px;
+  font-size: 13px; color: var(--text-muted); line-height: 1.5;
+}
+.court-tip strong { color: var(--orange); }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.5);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200; padding: 20px;
+}
+.modal-overlay[hidden] { display: none !important; }
+.modal-box {
+  background: var(--surface); border-radius: 16px; padding: 28px;
+  max-width: 560px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  position: relative; max-height: 90vh; overflow-y: auto;
+}
+.modal-close {
+  position: absolute; top: 14px; right: 14px; background: var(--bg);
+  border: none; border-radius: 8px; width: 32px; height: 32px;
+  font-size: 16px; cursor: pointer; color: var(--text-muted);
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-name { font-family: 'Oswald',sans-serif; font-size: 26px; font-weight: 700; margin: 10px 0 10px; line-height: 1.2; }
+.modal-desc { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px; }
+.modal-stats { display: flex; gap: 12px; padding: 14px 16px; background: var(--bg); border-radius: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.modal-stat { text-align: center; flex: 1; min-width: 60px; }
+.modal-stat-val { font-family: 'Oswald',sans-serif; font-size: 22px; font-weight: 700; color: var(--orange); display: block; font-variant-numeric: tabular-nums; }
+.modal-stat-lbl { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; font-weight: 600; }
+.modal-notes { font-size: 13px; color: var(--text-muted); font-style: italic; padding: 10px 14px; border-left: 3px solid var(--orange); background: var(--orange-light); border-radius: 0 8px 8px 0; margin-bottom: 16px; }
+.modal-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+.modal-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 24px; right: 24px; background: var(--navy);
+  color: #fff; padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 500;
+  box-shadow: 0 4px 20px rgba(0,0,0,.3); z-index: 300;
+  transform: translateY(80px); opacity: 0; transition: all .3s; pointer-events: none;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ── LOADING ── */
+.loading-overlay {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 16px; z-index: 500;
+}
+.loading-overlay[hidden] { display: none !important; }
+.spinner {
+  width: 40px; height: 40px; border: 3px solid var(--border);
+  border-top-color: var(--orange); border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-family: 'Oswald', sans-serif; font-size: 16px; color: var(--text-muted); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 720px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .sessions-layout { grid-template-columns: 1fr; }
+  .new-session-panel { position: static; }
+  .nav-tab { padding: 5px 8px; font-size: 11px; }
+  .logo-text { display: none; }
+  .logout-btn span { display: none; }
+}
+@media (max-width: 500px) {
+  .main { padding: 16px 14px; }
+  .cards-grid { grid-template-columns: 1fr; }
+  .nav-tab .label { display: none; }
+}
+</style>
+
+<!-- ═══════════════════════════════════════════ -->
+<!--  LOGIN SCREEN                               -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="ball">🏀</div>
+      <h1>Basket Coach</h1>
+      <p>Πάνελ Διαχείρισης Προπονητή</p>
+    </div>
+    <label class="login-label" for="loginEmail">Email</label>
+    <input class="login-input" type="email" id="loginEmail" placeholder="coach@email.com" autocomplete="email">
+    <label class="login-label" for="loginPass">Password</label>
+    <input class="login-input" type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">ΕΙΣΟΔΟΣ →</button>
+    <div class="login-err" id="loginErr"></div>
+    <div class="login-ver">Basket Coach v2.0 · Firebase Edition</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!--  LOADING OVERLAY                            -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="loading-overlay" id="loadingOverlay" hidden>
+  <div class="spinner"></div>
+  <div class="loading-text">Φόρτωση δεδομένων…</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!--  MAIN APP (hidden until logged in)          -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="app" hidden>
+
+<!-- NAV -->
+<div class="topnav">
+  <div class="logo">
+    <div class="logo-icon">🏀</div>
+    <div class="logo-text">Basket Coach</div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" data-view="search">
+      <span class="icon">🔍</span><span class="label">Αναζήτηση</span>
+    </button>
+    <button class="nav-tab" data-view="library">
+      <span class="icon">📚</span><span class="label">Βιβλιοθήκη</span>
+    </button>
+    <button class="nav-tab" data-view="add">
+      <span class="icon">➕</span><span class="label">Νέα</span>
+    </button>
+    <button class="nav-tab" data-view="sessions">
+      <span class="icon">📋</span><span class="label">Προπονήσεις</span>
+    </button>
+    <button class="nav-tab" data-view="court">
+      <span class="icon">🏟</span><span class="label">Γήπεδο</span>
+    </button>
+  </div>
+  <div class="nav-right">
+    <button class="theme-btn" id="themeBtn" title="Εναλλαγή θέματος">🌙</button>
+    <button class="logout-btn" id="logoutBtn" title="Αποσύνδεση">
+      <div class="user-dot"></div>
+      <span>Έξοδος</span>
+    </button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- SEARCH -->
+  <div class="view active" id="view-search">
+    <div class="page-hdr">
+      <div class="page-title">Αναζήτηση Ασκήσεων</div>
+      <div class="page-sub">Ψάξε με λέξη, κατηγορία ή tag</div>
+    </div>
+    <div class="search-bar-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-bar" type="search" id="searchInput" placeholder="π.χ. block out, πάσα, sprint…">
+    </div>
+    <div class="tag-cloud" id="tagCloud">
+      <span class="tag-cloud-label">Tags:</span>
+    </div>
+    <div class="results-count" id="resultsCount"></div>
+    <div class="cards-grid" id="searchResults"></div>
+  </div>
+
+  <!-- LIBRARY -->
+  <div class="view" id="view-library">
+    <div class="page-hdr">
+      <div class="page-title">Βιβλιοθήκη</div>
+      <div class="page-sub">Όλες οι ασκήσεις ανά κατηγορία</div>
+    </div>
+    <div class="cat-filters" id="catFilters">
+      <button class="cat-filter active" data-cat="all">Όλες</button>
+      <button class="cat-filter" data-cat="Πάσα">Πάσα</button>
+      <button class="cat-filter" data-cat="Block Out">Block Out</button>
+      <button class="cat-filter" data-cat="Ντρίμπλα">Ντρίμπλα</button>
+      <button class="cat-filter" data-cat="Σουτ">Σουτ</button>
+      <button class="cat-filter" data-cat="Φυσική">Φυσική</button>
+      <button class="cat-filter" data-cat="Τακτική">Τακτική</button>
+    </div>
+    <div class="results-count" id="libraryCount"></div>
+    <div class="cards-grid" id="libraryGrid"></div>
+  </div>
+
+  <!-- ADD EXERCISE -->
+  <div class="view" id="view-add">
+    <div class="page-hdr">
+      <div class="page-title">Νέα Άσκηση</div>
+      <div class="page-sub">Συμπλήρωσε τα στοιχεία και αποθήκευσε</div>
+    </div>
+    <div class="form-card">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Όνομα Άσκησης *</label>
+          <input type="text" id="exName" placeholder="π.χ. Outlet Pass Drill">
+        </div>
+        <div class="form-group">
+          <label>Κατηγορία *</label>
+          <select id="exCat">
+            <option value="">-- Επίλεξε --</option>
+            <option>Πάσα</option><option>Block Out</option><option>Ντρίμπλα</option>
+            <option>Σουτ</option><option>Φυσική</option><option>Τακτική</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Παίκτες</label>
+          <input type="text" id="exPlayers" placeholder="π.χ. 1v1, 3v2, ομαδικό">
+        </div>
+        <div class="form-group full">
+          <label>Περιγραφή *</label>
+          <textarea id="exDesc" placeholder="Πώς γίνεται η άσκηση βήμα-βήμα…"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Σετ</label>
+          <input type="number" id="exSets" min="1" placeholder="3">
+        </div>
+        <div class="form-group">
+          <label>Επαναλήψεις</label>
+          <input type="text" id="exReps" placeholder="π.χ. x10 ή 45''">
+        </div>
+        <div class="form-group">
+          <label>Χρόνος (λεπτά)</label>
+          <input type="number" id="exTime" min="1" placeholder="10">
+        </div>
+        <div class="form-group">
+          <label>Ξεκούραση</label>
+          <input type="text" id="exRest" placeholder="π.χ. 30''">
+        </div>
+        <div class="form-group full">
+          <label>Tags (χωρίζε με κόμμα)</label>
+          <input type="text" id="exTags" placeholder="π.χ. block-out, sprint, ρακετα, 1v1">
+        </div>
+        <div class="form-group full">
+          <label>Σημειώσεις Προπονητή</label>
+          <textarea id="exNotes" placeholder="Συμβουλές, παραλλαγές, σφάλματα που να προσέχεις…"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="saveEx">💾 Αποθήκευση</button>
+        <button class="btn btn-secondary" id="clearForm">🗑 Καθαρισμός</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SESSIONS -->
+  <div class="view" id="view-sessions">
+    <div class="page-hdr">
+      <div class="page-title">Προπονήσεις</div>
+      <div class="page-sub">Δημιούργησε και αποθήκευσε προπονήσεις</div>
+    </div>
+    <div class="sessions-layout">
+      <div id="sessionsList"></div>
+      <div class="new-session-panel">
+        <div class="session-panel-title">➕ Νέα Προπόνηση</div>
+        <div class="sess-field">
+          <label>Όνομα *</label>
+          <input type="text" id="sessName" placeholder="π.χ. Τρίτη 30/9 – Έμφαση Block Out">
+        </div>
+        <div class="sess-field">
+          <label>Στόχος</label>
+          <input type="text" id="sessGoal" placeholder="π.χ. Βελτίωση block-out">
+        </div>
+        <div class="sess-field">
+          <label>Διάρκεια</label>
+          <input type="text" id="sessDur" placeholder="π.χ. 90'">
+        </div>
+        <div class="sess-field">
+          <label>Παίκτες</label>
+          <input type="number" id="sessPlayers" placeholder="15" min="1">
+        </div>
+        <div class="sess-field">
+          <label>Προσθήκη Άσκησης</label>
+          <div class="picker-wrap">
+            <input class="picker-input" type="text" id="pickerInput" placeholder="🔍 Ψάξε άσκηση…">
+            <div class="picker-results" id="pickerResults"></div>
+          </div>
+        </div>
+        <div class="added-list" id="addedList"></div>
+        <div class="sess-field">
+          <label>Σημειώσεις</label>
+          <textarea id="sessNotes" placeholder="Γενικές σημειώσεις…"></textarea>
+        </div>
+        <button class="btn btn-primary" id="saveSessBtn" style="width:100%">💾 Αποθήκευση Προπόνησης</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- COURT -->
+  <div class="view" id="view-court">
+    <div class="page-hdr">
+      <div class="page-title">Γήπεδο</div>
+      <div class="page-sub">Πάτα μια ζώνη για να δεις ασκήσεις</div>
+    </div>
+
+    <div class="court-wrap">
+      <div class="court-svg-container">
+        <svg class="court-svg" viewBox="0 0 560 300" xmlns="http://www.w3.org/2000/svg">
+          <!-- Floor -->
+          <rect class="c-floor" x="0" y="0" width="560" height="300" rx="4"/>
+          <!-- Boundary -->
+          <rect class="c-line" x="2" y="2" width="556" height="296" rx="3"/>
+          <!-- Half court line -->
+          <line class="c-line" x1="280" y1="2" x2="280" y2="298"/>
+          <!-- Centre circle -->
+          <circle class="c-line" cx="280" cy="150" r="36"/>
+
+          <!-- LEFT PAINT -->
+          <rect class="c-paint" x="2" y="101" width="114" height="98"/>
+          <!-- Left free throw circle -->
+          <circle class="c-line-thin" cx="116" cy="150" r="36"/>
+          <!-- Left restricted arc -->
+          <path class="c-restricted" d="M 32 138 A 18 18 0 0 1 32 162" fill="none"/>
+          <!-- Left backboard -->
+          <rect class="c-board" x="5" y="130" width="3" height="40"/>
+          <!-- Left basket ring -->
+          <circle class="c-ring" cx="32" cy="150" r="9"/>
+          <!-- Left 3-point arc -->
+          <path class="c-line" d="M 65 19 A 135 135 0 1 1 65 281" fill="none"/>
+          <!-- Left corner lines (3pt) -->
+          <line class="c-line" x1="2" y1="19" x2="65" y2="19"/>
+          <line class="c-line" x1="2" y1="281" x2="65" y2="281"/>
+
+          <!-- RIGHT PAINT -->
+          <rect class="c-paint" x="444" y="101" width="114" height="98"/>
+          <!-- Right free throw circle -->
+          <circle class="c-line-thin" cx="444" cy="150" r="36"/>
+          <!-- Right restricted arc -->
+          <path class="c-restricted" d="M 528 138 A 18 18 0 0 0 528 162" fill="none"/>
+          <!-- Right backboard -->
+          <rect class="c-board" x="552" y="130" width="3" height="40"/>
+          <!-- Right basket ring -->
+          <circle class="c-ring" cx="528" cy="150" r="9"/>
+          <!-- Right 3-point arc -->
+          <path class="c-line" d="M 495 19 A 135 135 0 1 0 495 281" fill="none"/>
+          <!-- Right corner lines (3pt) -->
+          <line class="c-line" x1="558" y1="19" x2="495" y2="19"/>
+          <line class="c-line" x1="558" y1="281" x2="495" y2="281"/>
+
+          <!-- ─── CLICKABLE ZONE OVERLAYS ─── -->
+          <!-- Left paint -->
+          <rect class="zone-hit" data-zone="paint" x="2" y="101" width="114" height="98" rx="2"/>
+          <!-- Left corner top -->
+          <polygon class="zone-hit" data-zone="corner" points="2,2 65,2 65,19 2,19"/>
+          <!-- Left corner bottom -->
+          <polygon class="zone-hit" data-zone="corner" points="2,281 65,281 65,298 2,298"/>
+          <!-- Left wing top -->
+          <polygon class="zone-hit" data-zone="wing" points="65,2 280,2 280,90 65,19"/>
+          <!-- Left wing bottom -->
+          <polygon class="zone-hit" data-zone="wing" points="65,298 280,298 280,210 65,281"/>
+          <!-- Left midrange -->
+          <polygon class="zone-hit" data-zone="midrange" points="116,101 230,60 230,240 116,199"/>
+          <!-- Center jump circle area -->
+          <circle class="zone-hit" data-zone="fullcourt" cx="280" cy="150" r="50"/>
+          <!-- Right paint -->
+          <rect class="zone-hit" data-zone="paint" x="444" y="101" width="114" height="98" rx="2"/>
+          <!-- Right corner top -->
+          <polygon class="zone-hit" data-zone="corner" points="558,2 495,2 495,19 558,19"/>
+          <!-- Right corner bottom -->
+          <polygon class="zone-hit" data-zone="corner" points="558,281 495,281 495,298 558,298"/>
+          <!-- Right wing top -->
+          <polygon class="zone-hit" data-zone="wing" points="495,2 280,2 280,90 495,19"/>
+          <!-- Right wing bottom -->
+          <polygon class="zone-hit" data-zone="wing" points="495,298 280,298 280,210 495,281"/>
+          <!-- Right midrange -->
+          <polygon class="zone-hit" data-zone="midrange" points="444,101 330,60 330,240 444,199"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="zone-pills" id="zonePills">
+      <button class="zone-pill" data-zone="paint">🔴 Ρακέτα</button>
+      <button class="zone-pill" data-zone="midrange">🟡 Midrange</button>
+      <button class="zone-pill" data-zone="wing">🟢 Πτέρυγα</button>
+      <button class="zone-pill" data-zone="corner">🔵 Γωνία / 3ΠΤ</button>
+      <button class="zone-pill" data-zone="fullcourt">⚡ Full Court</button>
+    </div>
+
+    <div class="court-tip" id="courtTip">
+      👆 <strong>Πάτα μια ζώνη</strong> στο γήπεδο ή στα κουμπιά για να δεις ασκήσεις για εκείνη τη θέση.
+    </div>
+
+    <div id="courtResults" style="display:none">
+      <div class="zone-results-hdr">
+        <div class="zone-results-title" id="zoneResultsTitle"></div>
+        <button class="btn btn-secondary btn-sm" id="showAllSearch">Δες όλα →</button>
+      </div>
+      <div class="cards-grid" id="zoneCards"></div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- MODAL -->
+<div class="modal-overlay" id="exModal" hidden>
+  <div class="modal-box">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div id="modalCat"></div>
+    <div class="modal-name" id="modalName"></div>
+    <div class="modal-desc" id="modalDesc"></div>
+    <div class="modal-stats" id="modalStats"></div>
+    <div class="modal-notes" id="modalNotes" hidden></div>
+    <div class="modal-tags" id="modalTags"></div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="modalDelete">🗑 Διαγραφή</button>
+      <button class="btn btn-secondary" id="modalToSession">+ Σε Προπόνηση</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ════════════════════════════════════════════════════
+   FIREBASE CONFIG — ΑΛΛΑΞΕ ΤΑ ΠΑΡΑΚΑΤΩ ΜΕ ΤΑ ΔΙΚΑ ΣΟΥ
+   ════════════════════════════════════════════════════ */
+const firebaseConfig = {
+  apiKey:            "YOUR_API_KEY",
+  authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId:         "YOUR_PROJECT_ID",
+  storageBucket:     "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId:             "YOUR_APP_ID"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+/* ════════ SAMPLE DATA (φορτώνεται μόνο την 1η φορά) ════════ */
+const SAMPLES = [
+  { id:'s1', name:'Outlet Pass Drill', category:'Πάσα', players:'Ζευγάρια',
+    description:'Τρέχεις full court, στο τέρμα σε περιμένει συμπαίκτης. Παίρνεις μπάλα στον αέρα και κάνεις chest pass αμέσως χωρίς να σταματάς.',
+    sets:3, reps:'x10', time:8, rest:"30''",
+    tags:['τρεξιμο','μπαλα','ζευγαρια','πασα','outlet','fullcourt'],
+    notes:'Η πάσα βγαίνει ΠΡΙΝ σταματήσεις τελείως!', created:Date.now()-86400000 },
+  { id:'s2', name:'V-Cut Receive & Drive', category:'Πάσα', players:'Ζευγάρια',
+    description:'Ξεκινάς από τρικουάρτερ, κάνεις κοφτό V-cut προς baseline. Παίρνεις πάσα στο κόφτο, 1-2 βήματα, lay-up ή stop & shoot.',
+    sets:2, reps:'x8/πλευρά', time:10, rest:"30''",
+    tags:['v-cut','μπαλα','πασα','lay-up','πτερυγα','wing'],
+    notes:'Το V-cut πρέπει να είναι κοφτό — όχι στρογγυλό!', created:Date.now()-172800000 },
+  { id:'s3', name:'Sprint → Box Out → Rebound', category:'Block Out', players:'Ζευγάρια',
+    description:'Τρέχεις από half court προς ρακέτα. Συμπαίκτης πετάει μπάλα στο ταμπλό. Κάνεις drop step, block out position και παίρνεις ριμπάουντ.',
+    sets:3, reps:'x8', time:12, rest:"30''",
+    tags:['block-out','ριμπαουντ','sprint','μπαλα','ρακετα','paint'],
+    notes:'Πρώτα το σώμα, μετά τα χέρια!', created:Date.now()-259200000 },
+  { id:'s4', name:'1v1 Box Out Contest', category:'Block Out', players:'1v1',
+    description:'Δύο παίκτες μέσα στη ρακέτα. Ο προπονητής πετάει. Κάθε ένας προσπαθεί να πάρει το ριμπάουντ. 5 προσπάθειες, εναλλαγή ρόλων.',
+    sets:4, reps:'x5', time:10, rest:"20''",
+    tags:['1v1','block-out','ριμπαουντ','ανταγωνισμος','ρακετα','paint'],
+    notes:'Εστίαση στη θέση, όχι στη δύναμη!', created:Date.now()-345600000 },
+  { id:'s5', name:'Crossover → Midrange Pull-up', category:'Ντρίμπλα', players:'Ατομικό',
+    description:'Ξεκινάς από πλαϊνή γραμμή με δεξί χέρι. Στο τέλος της ρακέτας, crossover αριστερά, 2 ντριμπλιές και pull-up jumper.',
+    sets:3, reps:'x6/πλευρά', time:12, rest:"30''",
+    tags:['crossover','drive','midrange','ball-handling','mid-range'],
+    notes:'Ο crossover πρέπει να είναι χαμηλός και γρήγορος!', created:Date.now()-432000000 },
+  { id:'s6', name:'Catch & Shoot Corner 3', category:'Σουτ', players:'Ζευγάρια',
+    description:'Παίκτης Β στη γωνία, Παίκτης Α με μπάλα στο elbow. Ο Β κάνει cut, σταματά στη γωνία, Α δίνει πάσα, Β σουτάρει 3πτ.',
+    sets:3, reps:'x8/πλευρά', time:10, rest:"30''",
+    tags:['σουτ','3pt','corner','γωνια','catch-and-shoot','τριποντο'],
+    notes:'Τα πόδια πρέπει να είναι έτοιμα ΠΡΙΝ τη λήψη!', created:Date.now()-518400000 },
+  { id:'s7', name:'3v2 Fast Break', category:'Τακτική', players:'5 παίκτες',
+    description:'3 επιτίθενται εναντίον 2 αμυντικών. Η επίθεση πρέπει να εκμεταλλευτεί την αριθμητική υπεροχή. Εναλλαγή ρόλων μετά.',
+    sets:4, reps:'x3', time:15, rest:"1'",
+    tags:['3v2','fastbreak','fullcourt','τρεξιμο','τριποντο'],
+    notes:'Η μπάλα στο κέντρο! Εναλλαγές γρήγορες!', created:Date.now()-604800000 },
+  { id:'s8', name:'Full Court Lay-up Sprint', category:'Φυσική', players:'Ολοκλήρωση ομάδας',
+    description:'Παίκτης ξεκινά από baseline, sprint full court. Lay-up, παίρνει ριμπάουντ, outlet pass, επιστροφή. Αδιάκοπα για 3 λεπτά.',
+    sets:3, reps:'3 λεπτά', time:15, rest:"2'",
+    tags:['sprint','lay-up','fullcourt','τρεξιμο','continuous','outlet'],
+    notes:'Ο ρυθμός καθορίζεται από τον προπονητή!', created:Date.now()-691200000 }
+];
+
+/* ════════ STATE ════════ */
+let exercises = [];
+let sessions  = [];
+let activeTag  = null;
+let activeCat  = 'all';
+let activeZone = null;
+let pendingExs = [];
+let currentModalId = null;
+let unsubEx = null;
+let unsubSess = null;
+
+/* ════════ ZONE MAP ════════ */
+const ZONE_MAP = {
+  paint:     { label:'Ρακέτα',          tags:['ρακετα','block-out','ριμπαουντ','1v1','post','paint'],                        color:'#DC2626' },
+  midrange:  { label:'Midrange',         tags:['midrange','drive','crossover','mid-range','ball-handling'],                   color:'#D97706' },
+  wing:      { label:'Πτέρυγα',          tags:['πτερυγα','v-cut','wing','lay-up','πασα'],                                    color:'#16A34A' },
+  corner:    { label:'Γωνία / 3 Πόντια', tags:['corner','γωνια','3pt','τριποντο','catch-and-shoot'],                         color:'#2563EB' },
+  fullcourt: { label:'Full Court',        tags:['fullcourt','τρεξιμο','sprint','continuous','3v2','fastbreak','outlet'],      color:'#7C3AED' },
+};
+
+/* ════════ AUTH ════════ */
+auth.onAuthStateChanged(user => {
+  if (user) {
+    document.getElementById('login-screen').hidden = true;
+    document.getElementById('loadingOverlay').hidden = false;
+    document.getElementById('app').hidden = true;
+    startListeners();
+  } else {
+    stopListeners();
+    document.getElementById('login-screen').hidden = false;
+    document.getElementById('app').hidden = true;
+    document.getElementById('loadingOverlay').hidden = true;
+  }
+});
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const err   = document.getElementById('loginErr');
+  const btn   = document.getElementById('loginBtn');
+  err.style.display = 'none';
+  if (!email || !pass) { err.textContent = '⚠️ Συμπλήρωσε email και password'; err.style.display='block'; return; }
+  btn.disabled = true; btn.textContent = 'Σύνδεση…';
+  try {
+    await auth.signInWithEmailAndPassword(email, pass);
+  } catch(e) {
+    err.textContent = '❌ Λάθος email ή password. Ξαναπροσπάθησε.';
+    err.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'ΕΙΣΟΔΟΣ →';
+  }
+}
+
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  stopListeners();
+  auth.signOut();
+});
+
+/* Enter key on login */
+['loginEmail','loginPass'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+});
+
+/* ════════ FIRESTORE LISTENERS (real-time sync) ════════ */
+function startListeners() {
+  unsubEx = db.collection('exercises').orderBy('created','desc').onSnapshot(async snap => {
+    if (snap.empty) {
+      // First time: seed sample data
+      const batch = db.batch();
+      SAMPLES.forEach(s => batch.set(db.collection('exercises').doc(s.id), s));
+      await batch.commit();
+      return; // onSnapshot will fire again with the data
+    }
+    exercises = snap.docs.map(d => ({id:d.id,...d.data()}));
+    renderAll();
+    document.getElementById('loadingOverlay').hidden = true;
+    document.getElementById('app').hidden = false;
+    initTheme();
+  }, err => {
+    console.error('Firestore error:', err);
+    document.getElementById('loadingOverlay').hidden = true;
+    toast('❌ Σφάλμα σύνδεσης με βάση δεδομένων');
+  });
+
+  unsubSess = db.collection('sessions').orderBy('created','desc').onSnapshot(snap => {
+    sessions = snap.docs.map(d => ({id:d.id,...d.data()}));
+    renderSessions();
+  });
+}
+
+function stopListeners() {
+  if (unsubEx)   { unsubEx();   unsubEx = null; }
+  if (unsubSess) { unsubSess(); unsubSess = null; }
+}
+
+/* ════════ FIRESTORE CRUD ════════ */
+async function saveExercise(ex) {
+  await db.collection('exercises').doc(ex.id).set(ex);
+}
+
+async function deleteExercise(id) {
+  await db.collection('exercises').doc(id).delete();
+}
+
+async function saveSession(sess) {
+  await db.collection('sessions').doc(sess.id).set(sess);
+}
+
+/* ════════ THEME ════════ */
+function initTheme() {
+  const saved = localStorage.getItem('bc_theme');
+  if (saved) { document.documentElement.dataset.theme = saved; }
+  updateThemeBtn();
+}
+function updateThemeBtn() {
+  const dark = document.documentElement.dataset.theme === 'dark'
+    || (!document.documentElement.dataset.theme && window.matchMedia('(prefers-color-scheme:dark)').matches);
+  document.getElementById('themeBtn').textContent = dark ? '☀️' : '🌙';
+}
+document.getElementById('themeBtn').addEventListener('click', () => {
+  const cur = document.documentElement.dataset.theme;
+  const dark = cur==='dark' || (!cur && window.matchMedia('(prefers-color-scheme:dark)').matches);
+  document.documentElement.dataset.theme = dark ? 'light' : 'dark';
+  localStorage.setItem('bc_theme', document.documentElement.dataset.theme);
+  updateThemeBtn();
+});
+
+/* ════════ RENDER ALL ════════ */
+function renderAll() {
+  renderSearch();
+  renderTags();
+  renderLibrary();
+}
+
+/* ════════ CARD HTML ════════ */
+function card(ex) {
+  const meta = [
+    ex.sets    ? `<div class="ex-meta-item"><span>Σετ</span>${ex.sets}</div>` : '',
+    ex.reps    ? `<div class="ex-meta-item"><span>Επαν.</span>${ex.reps}</div>` : '',
+    ex.time    ? `<div class="ex-meta-item"><span>Χρόνος</span>${ex.time}'</div>` : '',
+    ex.players ? `<div class="ex-meta-item"><span>Παίκτες</span>${ex.players}</div>` : '',
+  ].filter(Boolean).join('');
+  const tags = ex.tags.map(t => `<span class="ex-tag" data-tag="${t}">#${t}</span>`).join('');
+  return `<div class="ex-card" data-id="${ex.id}">
+    <div class="ex-card-top">
+      <div class="ex-name">${ex.name}</div>
+      <div class="ex-cat-pill">${ex.category}</div>
+    </div>
+    <div class="ex-desc">${ex.description}</div>
+    ${meta ? `<div class="ex-meta">${meta}</div>` : ''}
+    <div class="ex-tags">${tags}</div>
+  </div>`;
+}
+
+/* ════════ SEARCH ════════ */
+function renderSearch() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  let res = exercises;
+  if (activeTag) res = res.filter(e => e.tags.some(t => t === activeTag));
+  if (q.trim()) res = res.filter(e =>
+    e.name.toLowerCase().includes(q) || e.description.toLowerCase().includes(q) ||
+    e.category.toLowerCase().includes(q) || e.tags.some(t => t.includes(q)) ||
+    (e.notes && e.notes.toLowerCase().includes(q))
+  );
+  document.getElementById('resultsCount').innerHTML = `<strong>${res.length}</strong> ασκήσεις βρέθηκαν`;
+  document.getElementById('searchResults').innerHTML = res.length
+    ? res.map(card).join('')
+    : `<div class="empty-state"><div class="empty-icon">🔍</div><p>Δεν βρέθηκαν αποτελέσματα.</p></div>`;
+}
+
+/* ════════ TAGS ════════ */
+function renderTags() {
+  const allTags = [...new Set(exercises.flatMap(e => e.tags))].sort();
+  const cloud = document.getElementById('tagCloud');
+  const lbl = cloud.querySelector('.tag-cloud-label');
+  cloud.innerHTML = '';
+  cloud.appendChild(lbl);
+  allTags.forEach(t => {
+    const b = document.createElement('button');
+    b.className = 'tag-btn' + (activeTag === t ? ' active' : '');
+    b.textContent = '#' + t;
+    b.onclick = () => { activeTag = activeTag === t ? null : t; renderTags(); renderSearch(); };
+    cloud.appendChild(b);
+  });
+}
+
+/* ════════ LIBRARY ════════ */
+function renderLibrary() {
+  const res = activeCat === 'all' ? exercises : exercises.filter(e => e.category === activeCat);
+  document.getElementById('libraryCount').innerHTML = `<strong>${res.length}</strong> ασκήσεις`;
+  document.getElementById('libraryGrid').innerHTML = res.length
+    ? res.map(card).join('')
+    : `<div class="empty-state"><div class="empty-icon">📚</div><p>Δεν υπάρχουν ασκήσεις. Πρόσθεσε μία!</p></div>`;
+}
+
+/* ════════ SESSIONS ════════ */
+function renderSessions() {
+  const el = document.getElementById('sessionsList');
+  if (!sessions.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><p>Δεν έχεις αποθηκεύσει προπόνηση ακόμα.</p></div>`;
+    return;
+  }
+  el.innerHTML = sessions.map(s => {
+    const d = new Date(s.created).toLocaleDateString('el-GR',{day:'numeric',month:'short',year:'numeric'});
+    const pills = (s.exercises||[]).slice(0,5).map(n=>`<span class="sess-pill">${n}</span>`).join('')
+      + ((s.exercises||[]).length > 5 ? `<span class="sess-pill">+${s.exercises.length-5}</span>` : '');
+    const info = [s.goal, s.duration, s.players ? s.players+' παίκτες' : ''].filter(Boolean).join(' · ');
+    return `<div class="session-card">
+      <div class="sess-hdr"><div class="sess-name">${s.name}</div><div class="sess-date">${d}</div></div>
+      ${info ? `<div class="sess-info">${info}</div>` : ''}
+      ${pills ? `<div class="sess-drills">${pills}</div>` : ''}
+      ${s.notes ? `<div class="sess-notes">${s.notes}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+/* ════════ EXERCISE PICKER ════════ */
+function renderPicker(q) {
+  const res = document.getElementById('pickerResults');
+  if (!q.trim()) { res.innerHTML = ''; return; }
+  const m = exercises.filter(e =>
+    e.name.toLowerCase().includes(q.toLowerCase()) ||
+    e.category.toLowerCase().includes(q.toLowerCase()) ||
+    e.tags.some(t => t.includes(q.toLowerCase()))
+  ).slice(0,8);
+  res.innerHTML = m.map(e =>
+    `<div class="picker-item" data-name="${e.name}">
+      <span class="picker-cat">${e.category}</span><span>${e.name}</span>
+    </div>`
+  ).join('');
+}
+
+function renderAdded() {
+  document.getElementById('addedList').innerHTML = pendingExs.map((n,i)=>
+    `<div class="added-item"><span>${i+1}. ${n}</span><button class="added-rm" data-idx="${i}">✕</button></div>`
+  ).join('');
+}
+
+/* ════════ COURT ════════ */
+function selectZone(zone) {
+  activeZone = zone;
+  document.querySelectorAll('.zone-hit').forEach(el =>
+    el.classList.toggle('z-active', el.dataset.zone === zone)
+  );
+  document.querySelectorAll('.zone-pill').forEach(el =>
+    el.classList.toggle('active', el.dataset.zone === zone)
+  );
+  const zm = ZONE_MAP[zone];
+  const matched = exercises.filter(e => e.tags.some(t => zm.tags.includes(t)));
+  document.getElementById('courtTip').style.display = 'none';
+  document.getElementById('courtResults').style.display = 'block';
+  document.getElementById('zoneResultsTitle').innerHTML =
+    `<span style="color:${zm.color}">${zm.label}</span> — ${matched.length} ασκήσεις`;
+  document.getElementById('zoneCards').innerHTML = matched.length
+    ? matched.map(card).join('')
+    : `<div class="empty-state"><div class="empty-icon">🏀</div><p>Δεν υπάρχουν ακόμα ασκήσεις για αυτή τη ζώνη.</p></div>`;
+  document.getElementById('showAllSearch').dataset.tags = zm.tags.join(',');
+}
+
+/* ════════ MODAL ════════ */
+function openModal(id) {
+  const ex = exercises.find(e => e.id === id);
+  if (!ex) return;
+  currentModalId = id;
+  document.getElementById('modalCat').innerHTML = `<span class="ex-cat-pill">${ex.category}</span>`;
+  document.getElementById('modalName').textContent = ex.name;
+  document.getElementById('modalDesc').textContent = ex.description;
+  const stats = [
+    ex.sets    ? `<div class="modal-stat"><span class="modal-stat-val">${ex.sets}</span><span class="modal-stat-lbl">Σετ</span></div>` : '',
+    ex.reps    ? `<div class="modal-stat"><span class="modal-stat-val">${ex.reps}</span><span class="modal-stat-lbl">Επαν.</span></div>` : '',
+    ex.time    ? `<div class="modal-stat"><span class="modal-stat-val">${ex.time}'</span><span class="modal-stat-lbl">Χρόνος</span></div>` : '',
+    ex.rest    ? `<div class="modal-stat"><span class="modal-stat-val">${ex.rest}</span><span class="modal-stat-lbl">Ξεκ.</span></div>` : '',
+    ex.players ? `<div class="modal-stat"><span class="modal-stat-val" style="font-size:14px">${ex.players}</span><span class="modal-stat-lbl">Παίκτες</span></div>` : '',
+  ].filter(Boolean).join('');
+  document.getElementById('modalStats').innerHTML = stats;
+  const notesEl = document.getElementById('modalNotes');
+  notesEl.hidden = !ex.notes;
+  notesEl.textContent = ex.notes || '';
+  document.getElementById('modalTags').innerHTML = ex.tags.map(t =>
+    `<span class="ex-tag">#${t}</span>`).join('');
+  document.getElementById('exModal').hidden = false;
+}
+
+/* ════════ TOAST ════════ */
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ════════ VIEW SWITCH ════════ */
+function switchView(v) {
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.querySelector(`.nav-tab[data-view="${v}"]`).classList.add('active');
+}
+
+/* ════════════════════════════════
+   EVENT LISTENERS
+════════════════════════════════ */
+
+/* Nav tabs */
+document.querySelectorAll('.nav-tab').forEach(btn => {
+  btn.addEventListener('click', () => switchView(btn.dataset.view));
+});
+
+/* Search input */
+document.getElementById('searchInput').addEventListener('input', renderSearch);
+
+/* Card clicks (search + library + court results) */
+['view-search','view-library','courtResults'].forEach(vid => {
+  document.getElementById(vid).addEventListener('click', e => {
+    const cardEl = e.target.closest('.ex-card');
+    const tag    = e.target.closest('.ex-tag');
+    if (tag && cardEl) { activeTag = tag.dataset.tag; renderTags(); switchView('search'); return; }
+    if (cardEl) openModal(cardEl.dataset.id);
+  });
+});
+
+/* Category filter */
+document.getElementById('catFilters').addEventListener('click', e => {
+  const f = e.target.closest('.cat-filter');
+  if (!f) return;
+  activeCat = f.dataset.cat;
+  document.querySelectorAll('.cat-filter').forEach(b => b.classList.toggle('active', b.dataset.cat===activeCat));
+  renderLibrary();
+});
+
+/* Court SVG zone hits */
+document.querySelectorAll('.zone-hit').forEach(el => {
+  el.addEventListener('click', () => selectZone(el.dataset.zone));
+});
+
+/* Zone pills */
+document.getElementById('zonePills').addEventListener('click', e => {
+  const p = e.target.closest('.zone-pill');
+  if (!p) return;
+  if (p.dataset.zone === activeZone) {
+    activeZone = null;
+    document.querySelectorAll('.zone-hit').forEach(el => el.classList.remove('z-active'));
+    document.querySelectorAll('.zone-pill').forEach(el => el.classList.remove('active'));
+    document.getElementById('courtTip').style.display = '';
+    document.getElementById('courtResults').style.display = 'none';
+  } else {
+    selectZone(p.dataset.zone);
+  }
+});
+
+/* Show all in search */
+document.getElementById('showAllSearch').addEventListener('click', e => {
+  const tags = (e.currentTarget.dataset.tags || '').split(',').filter(Boolean);
+  if (!tags.length) return;
+  activeTag = null;
+  document.getElementById('searchInput').value = tags[0];
+  switchView('search');
+  renderSearch();
+});
+
+/* Save exercise */
+document.getElementById('saveEx').addEventListener('click', async () => {
+  const name = document.getElementById('exName').value.trim();
+  const cat  = document.getElementById('exCat').value;
+  const desc = document.getElementById('exDesc').value.trim();
+  if (!name || !cat || !desc) { toast('⚠️ Συμπλήρωσε τα υποχρεωτικά πεδία (*)'); return; }
+  const tags = document.getElementById('exTags').value.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean);
+  const ex = {
+    id:'ex_'+Date.now(), name, category:cat,
+    players:document.getElementById('exPlayers').value.trim(),
+    description:desc,
+    sets:parseInt(document.getElementById('exSets').value)||null,
+    reps:document.getElementById('exReps').value.trim()||null,
+    time:parseInt(document.getElementById('exTime').value)||null,
+    rest:document.getElementById('exRest').value.trim()||null,
+    tags, notes:document.getElementById('exNotes').value.trim(), created:Date.now()
+  };
+  try {
+    await saveExercise(ex);
+    toast('✅ Η άσκηση αποθηκεύτηκε στο cloud!');
+    document.getElementById('clearForm').click();
+    switchView('library');
+  } catch(e) {
+    toast('❌ Σφάλμα αποθήκευσης: ' + e.message);
+  }
+});
+
+document.getElementById('clearForm').addEventListener('click', () => {
+  ['exName','exCat','exPlayers','exDesc','exSets','exReps','exTime','exRest','exTags','exNotes'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+});
+
+/* Modal */
+document.getElementById('modalClose').addEventListener('click', () => {
+  document.getElementById('exModal').hidden = true; currentModalId = null;
+});
+document.getElementById('exModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('exModal')) { document.getElementById('exModal').hidden = true; }
+});
+document.getElementById('modalDelete').addEventListener('click', async () => {
+  if (!currentModalId) return;
+  if (!confirm('Διαγραφή αυτής της άσκησης;')) return;
+  try {
+    await deleteExercise(currentModalId);
+    document.getElementById('exModal').hidden = true;
+    currentModalId = null;
+    toast('🗑 Η άσκηση διαγράφηκε.');
+  } catch(e) {
+    toast('❌ Σφάλμα: ' + e.message);
+  }
+});
+document.getElementById('modalToSession').addEventListener('click', () => {
+  const ex = exercises.find(e => e.id === currentModalId);
+  if (!ex) return;
+  if (!pendingExs.includes(ex.name)) { pendingExs.push(ex.name); renderAdded(); }
+  document.getElementById('exModal').hidden = true;
+  switchView('sessions');
+  toast('➕ Προστέθηκε στην προπόνηση!');
+});
+
+/* Session picker */
+document.getElementById('pickerInput').addEventListener('input', e => renderPicker(e.target.value));
+document.getElementById('pickerResults').addEventListener('click', e => {
+  const item = e.target.closest('.picker-item');
+  if (!item) return;
+  const name = item.dataset.name;
+  if (!pendingExs.includes(name)) { pendingExs.push(name); renderAdded(); }
+  document.getElementById('pickerInput').value = '';
+  document.getElementById('pickerResults').innerHTML = '';
+});
+document.getElementById('addedList').addEventListener('click', e => {
+  const rm = e.target.closest('.added-rm');
+  if (!rm) return;
+  pendingExs.splice(parseInt(rm.dataset.idx), 1);
+  renderAdded();
+});
+
+/* Save session */
+document.getElementById('saveSessBtn').addEventListener('click', async () => {
+  const name = document.getElementById('sessName').value.trim();
+  if (!name) { toast('⚠️ Βάλε όνομα στην προπόνηση'); return; }
+  const sess = {
+    id:'sess_'+Date.now(), name,
+    goal:document.getElementById('sessGoal').value.trim(),
+    duration:document.getElementById('sessDur').value.trim(),
+    players:parseInt(document.getElementById('sessPlayers').value)||null,
+    exercises:[...pendingExs],
+    notes:document.getElementById('sessNotes').value.trim(),
+    created:Date.now()
+  };
+  try {
+    await saveSession(sess);
+    pendingExs = [];
+    renderAdded();
+    ['sessName','sessGoal','sessDur','sessPlayers','sessNotes'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    toast('✅ Η προπόνηση αποθηκεύτηκε στο cloud!');
+  } catch(e) {
+    toast('❌ Σφάλμα: ' + e.message);
+  }
+});
+</script>
